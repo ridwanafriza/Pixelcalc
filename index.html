@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mario Pixel Calculator</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Font (pixel) -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <!-- Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    :root{
+      --mario-red:#E60026;
+      --mario-blue:#0066CC;
+      --mario-yellow:#FFD700;
+      --mario-green:#00AA00;
+      --pixel-shadow: 4px 4px 0 rgba(0,0,0,0.35);
+    }
+    body { font-family: 'Press Start 2P', monospace; background:#0b1220; }
+    /* Pixel background pattern (simple repeating squares) */
+    .pixel-bg {
+      background-image:
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 16px 16px, 16px 16px;
+      background-position: 0 0, 8px 8px;
+    }
+    /* Pixel-style button */
+    .pixel-btn {
+      box-shadow: var(--pixel-shadow);
+      transform: translateZ(0);
+    }
+    .pixel-btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 rgba(0,0,0,0.45); }
+    .pixel-hover:hover { filter: brightness(1.05); transform: translateY(-2px); transition: all .08s linear; }
+    /* 8-bit icons can be small squares—here we fake style */
+    .icon-8bit { width:20px; height:20px; image-rendering: pixelated; }
+    /* Responsive layout tweaks */
+    @media (min-width:1024px){
+      .calc-grid { grid-template-columns: 1fr 320px; gap: 2rem; }
+    }
+    /* Dark/Light theme variations (Mario day/night) */
+    .theme-day { background: linear-gradient(180deg,#7ec8ff 0%, #b0e9ff 100%); }
+    .theme-night { background: linear-gradient(180deg,#00102a 0%, #0b1220 100%); }
+    /* small helper for pixel text */
+    .pixel-text { letter-spacing: 1px; font-size: 12px; }
+    /* history scroll */
+    .history-scroll { max-height: 420px; overflow:auto; padding:8px; }
+    /* tutorial overlay */
+    .overlay-bg { background: rgba(0,0,0,0.7); backdrop-filter: blur(2px); }
+  </style>
+</head>
+<body class="pixel-bg theme-night min-h-screen text-white">
+
+  <div class="container mx-auto p-4">
+    <header class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl" style="color:var(--mario-yellow)">MARIO PIXEL CALCULATOR</h1>
+      <div class="flex items-center gap-3">
+        <button id="toggle-theme" class="pixel-btn pixel-hover px-3 py-2 rounded text-xs bg-white/5 border border-white/10">Toggle Theme</button>
+        <button id="open-tutorial" class="pixel-btn pixel-hover px-3 py-2 rounded text-xs bg-white/5 border border-white/10">Tutorial</button>
+      </div>
+    </header>
+
+    <main class="calc-grid grid gap-4">
+      <!-- Calculator area -->
+      <section class="bg-black/70 p-4 rounded-lg shadow-lg">
+        <div id="display" class="bg-[#06121b] text-right p-4 rounded text-white text-xs">
+          <div id="sub-display" class="pixel-text text-gray-300 break-words min-h-[26px]"></div>
+          <div id="main-display" class="text-2xl mt-1 break-words">0</div>
+        </div>
+
+        <!-- buttons -->
+        <div class="grid grid-cols-4 gap-2 mt-4">
+          <!-- Row: memory & functions -->
+          <button class="pixel-btn pixel-hover bg-[#222] p-3 rounded text-sm" data-action="mc">MC</button>
+          <button class="pixel-btn pixel-hover bg-[#222] p-3 rounded text-sm" data-action="mr">MR</button>
+          <button class="pixel-btn pixel-hover bg-[#222] p-3 rounded text-sm" data-action="ms">MS</button>
+          <button class="pixel-btn pixel-hover bg-[#222] p-3 rounded text-sm" data-action="mplus">M+</button>
+
+          <!-- Trig + advanced -->
+          <button class="pixel-btn pixel-hover bg-[#E60026] p-3 rounded text-sm" data-value="sin(">sin</button>
+          <button class="pixel-btn pixel-hover bg-[#E60026] p-3 rounded text-sm" data-value="cos(">cos</button>
+          <button class="pixel-btn pixel-hover bg-[#E60026] p-3 rounded text-sm" data-value="tan(">tan</button>
+          <button class="pixel-btn pixel-hover bg-[#E60026] p-3 rounded text-sm" data-action="pi">π</button>
+
+          <button class="pixel-btn pixel-hover bg-[#0066CC] p-3 rounded text-sm" data-value="asin(">asin</button>
+          <button class="pixel-btn pixel-hover bg-[#0066CC] p-3 rounded text-sm" data-value="acos(">acos</button>
+          <button class="pixel-btn pixel-hover bg-[#0066CC] p-3 rounded text-sm" data-value="atan(">atan</button>
+          <button class="pixel-btn pixel-hover bg-[#0066CC] p-3 rounded text-sm" data-action="e">e</button>
+
+          <!-- numbers and basic ops -->
+          <button class="pixel-btn pixel-hover bg-[#222] p-3 rounded text-sm" data-action="percent">%</button>
+          <button class="pixel-btn pixel-hover bg-[#222] p-3 rounded text-sm" data-action="neg">+/-</button>
+          <button class="pixel-btn pixel-hover bg-[#FFD700] p-3 rounded text-sm" data-action="fact">!</button>
+          <button class="pixel-btn pixel-hover bg-[#FFD700] p-3 rounded text-sm" data-action="clear">C</button>
+
+          <!-- digits -->
+          <button class="pixel-btn pixel-hover bg-[#111] p-4 rounded text-xl" data-value="7">7</button>
+          <button class="pixel-btn pixel-hover bg-[#111] p-4 rounded text-xl" data-value="8">8</button>
+          <button class="pixel-btn pixel-hover bg-[#111] p-4 rounded text-xl" data-value="9">9</button>
+          <button class="pixel-btn pixel-hover bg-[#00AA00] p-4 rounded text-xl" data-value="÷">÷</button>
+
+          <button class="pixel-btn pixel-hover bg-[#111] p-4 rounded text-xl" data-value="4">4</button>
+          <button class="pixel-btn pixel-hover bg-[#111] p-4 rounded text-xl" data-value="5">5</button>
+          <button class="pixel-btn pixel-hover bg-[#111] p-4 rounded text-xl" data-value="6">6</button>
+          <button class="pixel-btn pixel-hover bg-[#00AA00] p-4 rounded text-xl" data-value="×">×</button>
+
+          <button class="pixel-btn pixel-hover bg-[#111] p-4 rounded text-xl" data-value="1">1</button>
+          <button class="pixel-btn pixel-hover bg-[#111] p-4 rounded text-xl" data-value="2">2</button>
+          <button class="pixel-btn pixel-hover bg-[#111] p-4 rounded text-xl" data-value="3">3</button>
+          <button class="pixel-btn pixel-hover bg-[#00AA00] p-4 rounded text-xl" data-value="-">-</button>
+
+          <button class="pixel-btn pixel-hover bg-[#111] p-4 rounded text-xl col-span-2" data-value="0">0</button>
+          <button class="pixel-btn pixel-hover bg-[#111] p-4 rounded text-xl" data-value=".">.</button>
+          <button class="pixel-btn pixel-hover bg-[#00AA00] p-4 rounded text-xl" data-value="+">+</button>
+
+          <!-- advanced operations -->
+          <button class="pixel-btn pixel-hover bg-[#FFD700] p-3 rounded text-sm" data-action="sqrt">√</button>
+          <button class="pixel-btn pixel-hover bg-[#FFD700] p-3 rounded text-sm" data-action="pow2">x²</button>
+          <button class="pixel-btn pixel-hover bg-[#FFD700] p-3 rounded text-sm" data-action="pow3">x³</button>
+          <button class="pixel-btn pixel-hover bg-[#FFD700] p-3 rounded text-sm" data-action="pow">xʸ</button>
+
+          <button class="pixel-btn pixel-hover bg-[#0066CC] p-3 rounded text-sm" data-value="log(">log</button>
+          <button class="pixel-btn pixel-hover bg-[#0066CC] p-3 rounded text-sm" data-value="ln(">ln</button>
+          <button class="pixel-btn pixel-hover bg-[#0066CC] p-3 rounded text-sm" data-action="equals" style="grid-column: span 2; background:var(--mario-red)">=</button>
+        </div>
+      </section>
+
+      <!-- Sidebar: History & Settings (on desktop) -->
+      <aside class="bg-black/60 p-4 rounded-lg hidden lg:block">
+        <h2 class="text-sm mb-2">History</h2>
+        <div id="history" class="history-scroll text-xs bg-[#071019] p-2 rounded">
+          <!-- history entries appended here -->
+        </div>
+
+        <div class="mt-4">
+          <h3 class="text-sm">Keyboard Shortcuts</h3>
+          <ul class="text-xs mt-2">
+            <li>Numbers/Operators: langsung ketik</li>
+            <li>Enter =, Backspace clear last</li>
+            <li>m: MS, r: MR, c: MC</li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Tutorial overlay -->
+  <div id="tutorial" class="fixed inset-0 hidden items-center justify-center overlay-bg z-50">
+    <div class="bg-black/80 p-6 rounded max-w-xl mx-4">
+      <h2 class="text-lg mb-3">Tutorial Singkat</h2>
+      <p class="text-xs mb-3">Gunakan tombol atau keyboard. Fungsi trig bekerja dalam radian. Untuk pangkat gunakan tombol xʸ lalu masukkan eksponen, lalu tekan "=".</p>
+      <div class="flex gap-2 justify-end">
+        <button id="close-tutorial" class="pixel-btn bg-[#0066CC] px-3 py-2 rounded">Tutup</button>
+        <button id="dont-show" class="pixel-btn bg-[#00AA00] px-3 py-2 rounded">Jangan tampilkan lagi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Optional sound -->
+  <audio id="coin-sound" src="https://example.com/mario-coin.mp3" preload="auto"></audio>
+
+  <!-- App script -->
+  <script src="app.js" defer></script>
+
+  <!-- Register service worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(()=>{/* ignore */});
+    }
+  </script>
+</body>
+</html>
